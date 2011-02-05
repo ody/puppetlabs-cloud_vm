@@ -16,15 +16,11 @@ module Puppet
       end
     end
 
-    newparam(:provider) do
-      desc "Who is your cloud provider?"
+    newparam(:user_id) do
+      desc "user_id associated with your api key."
     end
 
-    newparam(:id) do
-      desc "id associated with your provider key."
-    end
-
-    newparam(:key) do
+    newparam(:api_key) do
       desc "A secret API key."
     end
 
@@ -32,6 +28,9 @@ module Puppet
       desc "The size of the instance"
     end
 
-    newparam(:
+    newparam(:type) do
+      desc "The type (os/ami) of the instance"
+    end
+
   end
 end
