@@ -3,6 +3,7 @@
 module Puppet
 
   newtype(:cloud_vm) do
+    @doc = "Doing stuff"
 
     ensurable do
       desc "Create or destroy an instance ."
@@ -14,6 +15,11 @@ module Puppet
       newvalue(:absent) do
         provider.destroy
       end
+    end
+
+    newparam(:name) do
+      desc "name of the machine..."
+      isnamevar
     end
 
     newparam(:user_id) do
