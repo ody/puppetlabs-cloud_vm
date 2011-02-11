@@ -4,19 +4,26 @@ Puppet::Type.type(:cloud_vm).provide(:rackspace) do
 
   require 'fog'
 
+  def self.connect
+    conn = Fog::Compute.new(
+      :provider => 'Rackspace'
+    )
+
+    #We are going to refresh the servers collection method while we are here.
+    conn.list_servers
+
+    return conn
+  end
+
   def self.instances
 
-    connection = Fog::Compute.new(
-      :provider           => 'Rackspace',
-      :rackspace_api_key  => @resource[:api_key],
-      :rackspace_username => @resource[:user_id]
-    )
+    connection = connect
 
     inst = []
 
     vm = {}
 
-    connection.servers.each { |i|
+    connection.servers.all.each { |i|
       vm = {
         :name => i.name,
         :status => i.status
@@ -30,7 +37,7 @@ Puppet::Type.type(:cloud_vm).provide(:rackspace) do
         vm[:ensure] = :absent
       end
 
-      inst << vm
+      inst << new(vm)
     }
 
     inst
@@ -38,44 +45,28 @@ Puppet::Type.type(:cloud_vm).provide(:rackspace) do
   end
 
   def exists?
-    connection = Fog::Compute.new(
-      :provider           => 'Rackspace',
-      :rackspace_api_key  => @resource[:api_key],
-      :rackspace_username => @resource[:user_id]
-    )
-
-    connection.servers.find { |i|
-      i.name == @resource[:name]
-    }
+    @property_hash[:ensure] != :absent
   end
 
   def create
 
-  connection = Fog::Compute.new(
-    :provider           => 'Rackspace',
-    :rackspace_api_key  => @resource[:api_key],
-    :rackspace_username => @resource[:user_id]
-  )
+    connection = self.class.connect
 
-  connection.servers.create(
-    :flavor_id => @resource[:size].to_i,
-    :image_id  => @resource[:type].to_i,
-    :name      => @resource[:name]
-  )
+    connection.servers.create(
+      :flavor_id => @resource[:size].to_i,
+      :image_id  => @resource[:type].to_i,
+      :name      => @resource[:name]
+    )
 
-  end
+    end
 
   def destroy
 
-  connection = Fog::Compute.new(
-    :provider           => 'Rackspace',
-    :rackspace_api_key  => @resource[:api_key],
-    :rackspace_username => @resource[:user_id]
-  )
+    connection = self.class.connect
 
-  connection.servers.find { |i|
-    i.name == @resource[:name]
-  }.destroy
+    connection.servers.all.find { |i|
+      i.name == @resource[:name]
+    }.destroy
 
   end
 
