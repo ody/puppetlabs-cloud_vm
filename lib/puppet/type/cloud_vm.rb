@@ -30,11 +30,11 @@ module Puppet
       desc "A secret API key."
     end
 
-    newparam(:size) do
+    newparam(:flavor) do
       desc "The size of the instance"
     end
 
-    newparam(:type) do
+    newparam(:image) do
       desc "The type (os/ami) of the instance"
     end
 

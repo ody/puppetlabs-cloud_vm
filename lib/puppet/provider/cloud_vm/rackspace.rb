@@ -25,8 +25,10 @@ Puppet::Type.type(:cloud_vm).provide(:rackspace) do
 
     connection.servers.all.each { |i|
       vm = {
-        :name => i.name,
-        :status => i.status
+        :name   => i.name,
+        :status => i.status,
+        :size   => i.flavor_id,
+        :type   => i.image_id
       }
 
       vm[:provider] = self.name
@@ -45,7 +47,9 @@ Puppet::Type.type(:cloud_vm).provide(:rackspace) do
   end
 
   def exists?
-    @property_hash[:ensure] != :absent
+    unless @property_hash[:ensure] == :absent or @property_hash.empty?
+      true
+    end
   end
 
   def create

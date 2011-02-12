@@ -1,8 +1,6 @@
 cloud_vm { 'testing':
   ensure   => present,
-  user_id  => 'auser',
-  api_key  => 'akey',
-  size     => '2',
-  type     => '49',
-  provider => 'rackspace',
+  image    => 'ami-0c638165',
+  flavor   => 't1.micro',
+  provider => 'ec2',
 }
