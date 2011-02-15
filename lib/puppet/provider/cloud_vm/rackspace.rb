@@ -4,6 +4,8 @@ Puppet::Type.type(:cloud_vm).provide(:rackspace) do
 
   require 'fog'
 
+  commands :rack=>'/tmp/rack'
+
   def self.connect
     conn = Fog::Compute.new(
       :provider => 'Rackspace'
