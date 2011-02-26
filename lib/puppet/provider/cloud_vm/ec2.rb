@@ -50,28 +50,35 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
     resources.each { |name, resource|
 
-      inst = connection.servers.find { |x| x.tags['Name'] == name }
-
-      vm = {
-        :name        => inst.tags['Name'],
-        :status      => inst.state,
-        :managed     => inst.tags['puppet_prov'],
-        :instance_id => inst.id,
-        :flavor      => inst.flavor_id,
-        :image       => inst.image_id
+      inst = connection.servers.find { |x|
+        if x
+          x.tags['Name'] == name
+        end
       }
 
-      vm[:provider] = self.name
+      if inst
 
-      if vm[:status] == 'running' or vm[:status] == 'pending'
-        vm[:ensure] = :present
-      elsif vm[:status] == 'shutting-down' or vm[:status] == 'terminated'
-        vm[:ensure] = :absent
-      else
-        vm[:ensure] = :absent
-      end
-      if vm[:name] != nil and vm[:managed] == 'true'
-        resource.provider = new(vm)
+        vm = {
+          :name        => inst.tags['Name'],
+          :status      => inst.state,
+          :managed     => inst.tags['puppet_prov'],
+          :instance_id => inst.id,
+          :flavor      => inst.flavor_id,
+          :image       => inst.image_id
+        }
+
+        vm[:provider] = self.name
+
+        if vm[:status] == 'running' or vm[:status] == 'pending'
+          vm[:ensure] = :present
+        elsif vm[:status] == 'shutting-down' or vm[:status] == 'terminated'
+          vm[:ensure] = :absent
+        else
+          vm[:ensure] = :absent
+        end
+        if vm[:name] != nil and vm[:managed] == 'true'
+          resource.provider = new(vm)
+        end
       end
     }
 
@@ -84,25 +91,24 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
   def create
 
-    #connection = self.class.connect
+    connection = self.class.connect
 
-    #id = connection.servers.create(
-    #  :flavor_id => @resource[:flavor],
-    #  :image_id  => @resource[:image]
-    #).id
+    id = connection.servers.create(
+      :flavor_id => @resource[:flavor],
+      :image_id  => @resource[:image]
+    ).id
 
-    #connection.tags.create(
-    #  :resource_id => id,
-    #  :key         => 'Name',
-    #  :value       => @resource[:name]
-    #)
+    connection.tags.create(
+      :resource_id => id,
+      :key         => 'Name',
+      :value       => @resource[:name]
+    )
 
-    #connection.tags.create(
-    #  :resource_id => id,
-    #  :key         => 'puppet_prov',
-    #  :value       => 'true'
-    #)
-    true
+    connection.tags.create(
+      :resource_id => id,
+      :key         => 'puppet_prov',
+      :value       => 'true'
+    )
 
   end
 
@@ -114,10 +120,15 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
     debug "Destroying #{@property_hash[:name]} with #{@property_hash[:instance_id]}"
 
-    if connection.terminate_instances(@property_hash[:instance_id])
-      sleep 5
-      connection.delete_tags(@property_hash[:instance_id], 'Name')
-    end
+    inst = connection.servers.find { |x|
+      x.id == @property_hash[:instance_id]
+    }
+
+    inst.destroy
+
+    inst.wait_for { state == 'terminated' }
+
+    connection.delete_tags(@property_hash[:instance_id], 'Name')
   end
 
 end
