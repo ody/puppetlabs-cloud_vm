@@ -22,7 +22,7 @@ module Puppet
       isnamevar
     end
 
-    newparam(:user_id) do
+    newparam(:id) do
       desc "user_id associated with your api key."
     end
 
@@ -38,5 +38,14 @@ module Puppet
       desc "The type (os/ami) of the instance"
     end
 
+    newparam(:region) do
+      desc "What part of the planet is this instance in?"
+      defaultto 'us-east-1'
+    end
+
+    newparam(:access_key) do
+      desc "Key name that gives you ssh access to instance"
+      defaultto ''
+    end
   end
 end

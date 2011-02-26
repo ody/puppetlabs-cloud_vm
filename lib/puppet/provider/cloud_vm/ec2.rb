@@ -3,9 +3,17 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
   require 'fog'
 
-  def self.connect
+  def self.connect(region, api_key = nil, id = nil)
+    if api_key
+      Fog.credentials[:aws_secret_access_key] = api_key
+    end
+    if id
+      Fog.credentials[:aws_access_key_id] = id
+    end
+
     Fog::Compute.new(
-      :provider => 'AWS'
+      :provider => 'AWS',
+      :region   => region
     )
   end
 
@@ -44,12 +52,14 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
   def self.prefetch(resources)
 
-    connection = connect
-
     vm = {}
 
     resources.each { |name, resource|
-
+      connection = connect(
+        resource[:region],
+        resource[:api_key],
+        resource[:id]
+      )
       inst = connection.servers.find { |x|
         if x
           x.tags['Name'] == name
@@ -91,21 +101,26 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
   def create
 
-    connection = self.class.connect
+    connection = self.class.connect(
+      @resource[:region],
+      @resource[:api_key],
+      @resource[:id]
+    )
 
-    id = connection.servers.create(
-      :flavor_id => @resource[:flavor],
-      :image_id  => @resource[:image]
-    ).id
+    inst = connection.servers.create(
+      :flavor_id         => @resource[:flavor],
+      :image_id          => @resource[:image],
+      :key_name          => @resource[:access_key]
+    )
 
     connection.tags.create(
-      :resource_id => id,
+      :resource_id => inst.id,
       :key         => 'Name',
       :value       => @resource[:name]
     )
 
     connection.tags.create(
-      :resource_id => id,
+      :resource_id => inst.id,
       :key         => 'puppet_prov',
       :value       => 'true'
     )
@@ -114,15 +129,15 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
   def destroy
 
-    connection = self.class.connect
+    connection = self.class.connect(
+      @resource[:region],
+      @resource[:api_key],
+      @resource[:id]
+    )
 
-    debug @property_hash.inspect
-
-    debug "Destroying #{@property_hash[:name]} with #{@property_hash[:instance_id]}"
-
-    inst = connection.servers.find { |x|
-      x.id == @property_hash[:instance_id]
-    }
+    inst = connection.servers.get(
+      @property_hash[:instance_id]
+    )
 
     inst.destroy
 
