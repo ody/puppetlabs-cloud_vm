@@ -107,10 +107,13 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
       @resource[:id]
     )
 
+    debug @resource[:user_data]
+
     inst = connection.servers.create(
-      :flavor_id         => @resource[:flavor],
-      :image_id          => @resource[:image],
-      :key_name          => @resource[:access_key]
+      :flavor_id => @resource[:flavor],
+      :image_id  => @resource[:image],
+      :key_name  => @resource[:access_key],
+      :user_data => @resource[:user_data]
     )
 
     connection.tags.create(

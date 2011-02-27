@@ -47,5 +47,10 @@ module Puppet
       desc "Key name that gives you ssh access to instance"
       defaultto ''
     end
+
+    newparam(:user_data) do
+      desc "User defined data"
+      defaultto "#!/bin/sh\n/bin/echo 'Nothing done by Puppet...' > /root/user_data.txt"
+    end
   end
 end
