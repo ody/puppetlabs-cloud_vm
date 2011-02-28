@@ -109,11 +109,22 @@ Puppet::Type.type(:cloud_vm).provide(:ec2) do
 
     debug @resource[:user_data]
 
+    user_data_batch = "#!/bin/sh
+mkdir /etc/ec2
+echo '#{@resource[:name]}' >/etc/ec2/instance_name_tag.txt
+cat <<EOF >/etc/ec2/user_data
+#{@resource[:user_data]}
+EOF
+chmod 700 /etc/ec2/user_data
+exec /etc/ec2/user_data"
+
+    debug user_data_batch
+
     inst = connection.servers.create(
       :flavor_id => @resource[:flavor],
       :image_id  => @resource[:image],
       :key_name  => @resource[:access_key],
-      :user_data => @resource[:user_data]
+      :user_data => user_data_batch
     )
 
     connection.tags.create(
